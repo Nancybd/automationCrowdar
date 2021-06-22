@@ -1,118 +1,142 @@
 package WebConnector;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
+import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-
-import java.io.FileInputStream;
-import io.cucumber.core.api.Scenario;
-import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxProfile;
-import org.openqa.selenium.firefox.ProfilesIni;
 import org.openqa.selenium.remote.SessionId;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import java.io.IOException;
-import java.util.Properties;
+import io.cucumber.core.api.Scenario;
 
-public class  Page <V> {
-        public static WebDriver driver=null;
-        public SessionId session=null;
-        public static Properties prop = new Properties();
-        public String heightValue;
-        public String widthValue;
+public class Page<V> {
 
-        public Page(){
-            try {
-                prop.load( new FileInputStream("./src/test/config/application.properties") );
-            } catch (IOException e) {
-                e.printStackTrace();
+	public static WebDriver driver=null;
+	public  SessionId session=null;
+	public static Properties prop = new Properties();
+	
+	public Page(){
+    	try {
+    		prop.load( new FileInputStream("./src/test/config/application.properties") );
+    	} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public WebDriver getDriver() {
+		return this.getDriver();
+	}
+	
+	public void setDriver(WebDriver driver){
+		this.driver=driver;
+	}
+	
+    public void setUpDriver(){
+        String browser = prop.getProperty("browser");
+        if (browser == null) {
+            browser = "chrome";
+        }
+        switch (browser) {
+            case "chrome":
+            	System.setProperty("webdriver.chrome.driver","./src/test/lib/chromedriver.exe");
+                ChromeOptions chromeOptions = new ChromeOptions();
+                chromeOptions.addArguments("start-maximized");
+            	   //session = ((ChromeDriver)driver).getSessionId();
+                driver = new ChromeDriver(chromeOptions);
+                break;
+            case "firefox":
+            	System.setProperty("webdriver.gecko.driver","./src/test/lib/geckodriver.exe");
+                driver = new FirefoxDriver();
+                driver.manage().window().maximize();
+                 //session = ((FirefoxDriver)driver).getSessionId();
+                break;
+            default:
+                throw new IllegalArgumentException("Browser \"" + browser + "\" isn't supported.");
+        }
+    }
+    
+    public void closeDriver(Scenario scenario){
+        if(scenario.isFailed()){
+           saveScreenshotsForScenario(scenario);
+        }
+        driver.quit();
+    }
+
+    private void saveScreenshotsForScenario(final Scenario scenario) {
+        final byte[] screenshot = ((TakesScreenshot) driver)
+                .getScreenshotAs(OutputType.BYTES);
+        scenario.embed(screenshot, "image/png");
+    }
+    
+    public String getSpecificColumnData(String FilePath, String SheetName, String ColumnName) throws InvalidFormatException, IOException {
+    	FileInputStream fis = new FileInputStream(FilePath);
+        XSSFWorkbook workbook = new XSSFWorkbook(fis);
+        XSSFSheet sheet = workbook.getSheet(SheetName);
+        XSSFRow row = sheet.getRow(0);
+        int col_num = -1;
+        for(int i=0; i < row.getLastCellNum(); i++)
+        {
+            if(row.getCell(i).getStringCellValue().trim().equals(ColumnName))
+                col_num = i;
+        }
+        row = sheet.getRow(1);
+        XSSFCell cell = row.getCell(col_num);
+        String value = cell.getStringCellValue();
+        fis.close();
+        System.out.println("Value of the Excel Cell is - "+ value);    	 
+    	return value;
+    }
+    
+    public void setSpecificColumnData(String FilePath, String SheetName, String ColumnName) throws IOException{
+    	FileInputStream fis;
+		fis = new FileInputStream(FilePath);
+		FileOutputStream fos = null;
+        XSSFWorkbook workbook = new XSSFWorkbook(fis);
+        XSSFSheet sheet = workbook.getSheet(SheetName);
+        XSSFRow row = null;
+        XSSFCell cell = null;
+        XSSFFont font = workbook.createFont();
+        XSSFCellStyle style = workbook.createCellStyle();
+        int col_Num = -1;
+        row = sheet.getRow(0);
+        for(int i = 0; i < row.getLastCellNum(); i++)
+        {
+            if(row.getCell(i).getStringCellValue().trim().equals(ColumnName))
+            {
+                col_Num = i;
             }
         }
-        public WebDriver getDriver() {
-            return this.getDriver();
-        }
-
-        public void setDriver(WebDriver driver){
-            this.driver=driver;
-        }
-
-        public void setUpDriver(){
-            String browser = prop.getProperty("browser");
-            String windowSize = prop.getProperty("window-size");
-            if (browser == null) {
-                browser = "chrome";
-            }
-            switch (browser) {
-                case "chrome":
-                    System.setProperty("webdriver.chrome.driver","./src/test/lib/chromedriver.exe");
-                    //Resize the browser to the given window-size from application.properties file
-                    ChromeOptions options = new ChromeOptions();
-                    options.addArguments(windowSize);
-                    driver = new ChromeDriver(options);
-                    break;
-                case "firefox":
-                    System.setProperty("webdriver.gecko.driver","./src/test/lib/geckodriver.exe");
-                    String[] textElements = windowSize.split(",");
-                    for(int i=0; i<textElements.length; i++) {
-                        widthValue =textElements[0];
-                        heightValue = textElements[1];
-                    }
-                    int width =  Integer.parseInt(widthValue);
-                    int height = Integer.parseInt(heightValue);
-                    Dimension d = new Dimension(width,height);
-                    driver = new FirefoxDriver();
-                    //Resize the current window to the given dimension
-                    driver.manage().window().setSize(d);
-                    FirefoxProfile profile = new ProfilesIni().getProfile("default");
-                    profile.setPreference("network.cookie.cookieBehavior", 2);
-                    driver = new FirefoxDriver((Capabilities) profile);
-                    break;
-                case "edge":
-                    System.setProperty("webdriver.edge.driver", "./src/test/lib/msedgedriver.exe");
-                    driver = new EdgeDriver();
-                    driver.manage().window().maximize();
-                    break;
-                case "safari":
-                    String[] textElementSafari = windowSize.split(",");
-                    for(int i=0; i<textElementSafari.length; i++) {
-                        widthValue =textElementSafari[0];
-                        heightValue = textElementSafari[1];
-                    }
-                    int widthSafari =  Integer.parseInt(widthValue);
-                    int heightSafari = Integer.parseInt(heightValue);
-                    Dimension dSafari = new Dimension(widthSafari,heightSafari);
-                    driver = new SafariDriver();
-                    //Resize the current window to the given dimension
-                    driver.manage().window().setSize(dSafari);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Browser \"" + browser + "\" isn't supported.");
-            }
-        }
-
-        public void closeDriver(Scenario scenario){
-            if(scenario.isFailed()){
-                // Code to capture and embed images in test reports (if scenario fails)
-                saveScreenshotsForScenario(scenario);
-            }
-            driver.quit();
-        }
-
-        private void saveScreenshotsForScenario(final Scenario scenario) {
-            final byte[] screenshot = ((TakesScreenshot) driver)
-                    .getScreenshotAs(OutputType.BYTES);
-            scenario.embed(screenshot, "image/png");
-        }
-
-        public void waitForPageLoad(int timeout){
-            ExpectedConditions.jsReturnsValue("return document.readyState==\"complete\";");
-        }
+        row = sheet.getRow(1);
+        if(row == null)
+            row = sheet.createRow(1);
+        cell = row.getCell(col_Num);
+        if(cell == null)
+            cell = row.createCell(col_Num);
+        font.setFontName("Comic Sans MS");
+        font.setFontHeight(14.0);
+        font.setBold(true);
+        font.setColor(HSSFColor.WHITE.index);
+        style.setFont(font);
+        style.setFillForegroundColor(HSSFColor.GREEN.index);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        cell.setCellStyle(style);
+        cell.setCellValue("PASS");
+		fos = new FileOutputStream(FilePath);
+        workbook.write(fos);
+        fos.close();
+    }
+    
 }

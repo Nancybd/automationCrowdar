@@ -1,26 +1,24 @@
 package runner;
-import io.cucumber.testng.CucumberOptions;
+
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
-@CucumberOptions(tags =  {"@login"},glue = {"stepdefs"},
-        plugin = {"html:target/cucumber-reports/LoginPage/cucumber-pretty",
-                "json:target/json-cucumber-reports/LoginPage/cukejson.json",
-                "testng:target/testng-cucumber-reports/LoginPage/cuketestng.xml" },
-        features = {"src/test/resources/features/"})
+import io.cucumber.testng.CucumberOptions;
+import stepdefs.ServiceHooks;
 
-public class LoginPageRunner {
-    private static long duration;
 
-    @BeforeClass
-    public static void before() {
-        duration = System.currentTimeMillis();
-        System.out.println("Thread Id  | Scenario Num       | Step Count");
-    }
+@CucumberOptions( tags = {"@login"},glue = {"stepdefs"}, plugin = {"html:target/cucumber-reports/HomePage/cucumber-pretty","json:target/json-cucumber-reports/homepage/cukejson.json",
+		"testng:target/testng-cucumber-reports/HomePage/cuketestng.xml" }, features = {"src/test/resources/features/LoginPage"})
+public class LoginPageRunner extends ServiceHooks {
+	
+	@BeforeClass
+	public static void before() {
+		System.out.println("Before - "+System.currentTimeMillis());
+	}
+	
+	@AfterClass
+	public static void after() {
+		System.out.println("After - "+System.currentTimeMillis());
+	}
 
-    @AfterClass
-    public static void after() {
-        duration = System.currentTimeMillis() - duration;
-        System.out.println("DURATION - "+ duration);
-    }
 }

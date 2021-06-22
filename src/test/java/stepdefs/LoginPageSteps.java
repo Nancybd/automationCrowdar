@@ -1,20 +1,43 @@
 package stepdefs;
+import ApplicationPages.LoginPage;
 import WebConnector.Page;
+import io.cucumber.core.api.Scenario;
+import io.cucumber.java.After;
+import io.cucumber.java.Before;
+import io.cucumber.java.BeforeStep;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+
+import java.io.IOException;
 
 public class LoginPageSteps extends Page {
-
+    private String scenDesc;
     public LoginPage loginPage;
+    @Before
+    public void before(Scenario scenario) {
+        this.scenDesc = scenario.getName();
+        setUpDriver();
+    }
+
+    @After
+    public void after(Scenario scenario){
+        closeDriver(scenario);
+    }
+
+    @BeforeStep
+    public void beforeStep() throws InterruptedException {
+        Thread.sleep(2000);
+    }
 
     public LoginPageSteps() {
         this.loginPage = new LoginPage();
     }
 
     @Given("I am in Login page")
-    public void iAmInLoginPage() {
+    public void iAmInLoginPage() throws IOException, InvalidFormatException {
         this.loginPage.open();
     }
 

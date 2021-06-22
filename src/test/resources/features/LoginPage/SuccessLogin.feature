@@ -1,6 +1,6 @@
 Feature: Login with valid credentials
 
-  @login
+  @login1
   Scenario Outline: User log in page
     Given I am in Login page
     When I enter <user> in Username field

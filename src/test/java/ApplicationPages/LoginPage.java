@@ -1,26 +1,27 @@
-package stepdefs;
+package ApplicationPages;
 
 import WebConnector.Page;
+import static WebConnector.Page.driver;
+
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 
-import static WebConnector.Page.driver;
+import java.io.IOException;
+
 public class LoginPage {
-    Page wc= new Page();
-    String DEMO_URL      = "http://saucedemo.com";
+    Page wc=new Page();
+    String DEMO_URL      = "https://www.saucedemo.com/";
     String productsTitle = "//*[@class='title']";
     String error         = "/html[1]/body[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/form[1]/div[3]";
 
-    public void open() {
-        String URL = wc.prop.getProperty("url");
-        driver = new ChromeDriver();
-        driver.get(DEMO_URL);
+    public void open() throws InvalidFormatException, IOException {
+        String URL=wc.getSpecificColumnData("./src/test/testdata/data.xlsx","sheet1", "URL");
+        driver.get(URL);
     }
-
     public void enterUserName(String userText){
         WebElement userInput = driver.findElement(By.id("user-name"));
         userInput.sendKeys(userText);
@@ -47,7 +48,7 @@ public class LoginPage {
     }
 
     public void clickOnBurgerMenu(){
-        WebElement burgerMenu = driver.findElement(By.id("menu_button_container"));
+        WebElement burgerMenu = driver.findElement(By.id("react-burger-menu-btn"));
         burgerMenu.click();
     }
 
@@ -57,8 +58,10 @@ public class LoginPage {
     }
 
     public void validateWarningMsg(String msg) {
-    WebElement errorMessage = driver.findElement(By.xpath("error"));
+    WebElement errorMessage = driver.findElement(By.xpath(error));
     String innerMsg  = errorMessage.getText();
-    Assert.assertTrue(innerMsg.contains(msg));
+    System.out.println("Inner Message-->"+innerMsg);
+    System.out.println("Error Message-->"+msg);
+    Assert.assertEquals(innerMsg, msg);
     }
 }
